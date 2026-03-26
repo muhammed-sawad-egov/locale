@@ -6307,7 +6307,7 @@
   "user_role_update_success": "User role updated successfully",
   "user_type": "User Type",
   "user_updated_successfully": "User updated successfully",
-  "username": "Username",
+  "username": "USERNAME",
   "username_already_exists": "This username already exists",
   "username_available": "Username is available",
   "username_characters_validation": "Only <strong>lowercase letters, numbers, and . _ -  </strong>are allowed",
