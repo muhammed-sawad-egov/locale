@@ -1,22 +1,48 @@
-```mermaid
 flowchart LR
     A[Client Viewer] --> B[GET /studies API]
+
     B --> C[Authorization Check]
     B --> D[Postgres: DicomStudy]
 
-    B --> E[ThreadPoolExecutor]
+    B --> E[Submit Tasks to ThreadPoolExecutor]
 
-    E --> F[Cache Lookup]
+    subgraph Parallel Execution
+        E --> F[fetch_study(study_uid)]
 
-    F -->|Hit| G[Return Cached Study]
-    F -->|Miss| H[QIDO: /rs/studies]
-    F -->|Miss| I[QIDO: /series]
+        F --> G[Cache Lookup]
 
-    H --> J[d_find Extraction]
-    I --> J
+        G -->|Hit| H[Return Cached Study Result]
 
-    J --> K[Datetime Conversion]
-    K --> L[Cache Store]
+        G -->|Miss| I[d_query_study]
 
-    E --> M[Aggregate Results]
-    M --> A
+        I --> J[QIDO: /rs/studies]
+        J --> K[d_query_series_for_study]
+
+        K --> L[QIDO: /rs/studies/{uid}/series]
+
+        L --> M[d_find Tag Extraction]
+        I --> M
+
+        M --> N[d_datetime_to_iso]
+
+        N --> O[Build Study Object]
+
+        O --> P[Cache Store]
+
+        P --> Q[Return Study Result]
+    end
+
+    %% as_completed handling
+    E --> R[as_completed(futures)]
+
+    subgraph as_completed Loop
+        R --> S[Wait for any future to finish]
+        S --> T[Yield finished future]
+        T --> U[future.result()]
+        U --> V[Append to results list]
+        V --> S
+    end
+
+    V --> W[Final Aggregated Results]
+
+    W --> A
